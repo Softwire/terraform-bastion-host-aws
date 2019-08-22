@@ -48,4 +48,4 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 |----------|-------------|
 | instances_security_group_id | Security group to apply to specific instances to allow ingress from the bastion | 
 | bastion_dns_name | DNS name of the bastion. | 
-| ssh_keys_bucket | Name of the S3 bucket used for user public key storage | list | yes | |
+| ssh_keys_bucket | Name of the S3 bucket used for user public key storage |

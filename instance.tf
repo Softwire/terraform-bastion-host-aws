@@ -34,8 +34,8 @@ resource "aws_security_group" "bastion" {
   # Outgoing traffic - restrict to the VPC
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = ""
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = [data.aws_vpc.bastion.cidr_block]
   }
 }

@@ -31,12 +31,29 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
   }
 
-  # Outgoing traffic - restrict to the VPC
+  # Outgoing traffic - anything VPC only
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = [data.aws_vpc.bastion.cidr_block]
+  }
+
+  # Plus allow HTTP(S) internet egress for yum updates
+  egress {
+    description = "Outbound TLS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Outbound HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -85,7 +102,7 @@ resource "aws_autoscaling_group" "bastion" {
   min_size             = local.instance_count
   desired_capacity     = local.instance_count
 
-  vpc_zone_identifier = var.subnet_arns
+  vpc_zone_identifier = var.instance_subnet_arns
 
   default_cooldown          = 180
   health_check_grace_period = 180

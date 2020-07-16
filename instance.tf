@@ -31,11 +31,28 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
   }
 
-  # Outgoing traffic - allow internet egress for yum updates
+  # Outgoing traffic - anything VPC only
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
+    cidr_blocks = [data.aws_vpc.bastion.cidr_block]
+  }
+
+  # Plus allow HTTP(S) internet egress for yum updates
+  egress {
+    description = "Outbound TLS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Outbound HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }

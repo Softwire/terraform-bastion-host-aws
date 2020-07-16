@@ -45,17 +45,17 @@ for row in $(cat "$S3_DATA_FILE" | jq -r '.[] | @base64'); do
 
   # Cut the .pub from the end of the public key name
   KEY=$(_jq '.Key')
-  USER_NAME=$(parse_username, "$KEY")
+  USER_NAME=$(parse_username "$KEY")
   ETAG=$(_jq '.ETag')
 
   # Check the username starts with a letter and only contains letters, numbers and dashes afterwards
   if [[ "$USER_NAME" =~ ^[a-z][-a-z0-9]*$ ]]; then
     # Check whether the user already exists
-    cut -d: -f1 /etc/passwd | grep -qx $USER_NAME
-    if [ $? -eq 1 ]; then
+    cut -d: -f1 /etc/passwd | grep -qx $USER_NAME  || error_code=$?
+    if [ $error_code -eq 1 ]; then
       # See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/managing-users.html#create-user-account
       adduser $USER_NAME
-      mkdir -m 700 /home/$USER_NAME/.ssh
+      [ -d /home/$USER_NAME/.ssh ] || mkdir -m 700 /home/$USER_NAME/.ssh
       chown $USER_NAME:$USER_NAME /home/$USER_NAME/.ssh
       echo "$KEY" >> "$REGISTERED_KEYS_FILE"
       echo "$(date --iso-8601='seconds'): Created user $USER_NAME" >> $LOG_FILE

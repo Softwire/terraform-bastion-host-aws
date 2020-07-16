@@ -2,8 +2,12 @@ variable "region" {
   description = "AWS region name"
 }
 
-variable "subnet_arns" {
-  description = "List of subnet ARNs where instances will be deployed. This should have public ingress"
+variable "public_subnet_arns" {
+  description = "List of subnet ARNs where NLB listeners will be deployed. This should have public ingress"
+}
+
+variable "instance_subnet_arns" {
+  description = "List of subnet ARNs where instances will be deployed."
 }
 
 variable "vpc_id" {

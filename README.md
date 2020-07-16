@@ -20,14 +20,15 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 | Variable | Description | Type | Required | Default |
 |----------|-------------|:----:|:--------:|:-------:|
 | region | AWS region name | string | yes | |
-| subnet_arns | List of public subnet ARNs where instances will be deployed. | list | yes | |
+| public_subnet_arns | List of public subnet ARNs where NLB listeners will be deployed. | list | yes | |
+| instance_subnet_arns | List of subnet ARNs where instances will be deployed. | list | yes | |
 | vpc_id | ID of the VPC where the bastion will be deployed | string | yes | |
 | admin_ssh_key_pair | Name of the SSH key pair for the admin user account | string | yes | |
 | name_prefix | Prefix to be applied to names of all resources | string | no | `bastion-host-` |
 | external_allowed_cidrs | List of CIDRs which can access the bastion | list | no | `["0.0.0.0/0"]` |
 | external_ssh_port | Which port to use to SSH into the bastion | number | no | `22` |
 | internal_ssh_port | Which port the bastion will use to SSH into other private instances | number | no | `22` |
-| instance_count | Number of instances to deploy. Defaults to one per subnet ARN provided. | number | no | `count(var.subnet_arns)` |
+| instance_count | Number of instances to deploy. Defaults to one per subnet ARN provided. | number | no | `count(var.instance_subnet_arns)` |
 | custom_ami | Provide your own AWS AMI to use - useful if you need specific tools on the bastion | string | no | |
 | dns_config | Optional details of an alias DNS record for the bastion. [See below](#dns-config) for properties | object | no | |
 | tags_default | Tags to apply to all resources | map | no | `{}` |

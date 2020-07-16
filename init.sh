@@ -1,10 +1,17 @@
 #!/bin/bash
 
+set -xe
+
 yum -y update --security
 yum -y install jq
 
-cat > /usr/bin/bastion/sync_users_with_s3 << EOF
+mkdir /usr/bin/bastion
+mkdir /var/log/bastion
+
+cat > /usr/bin/bastion/sync_users_with_s3 <<'EOF'
 #!/usr/bin/env bash
+
+set -xe
 
 LOG_FILE="/var/log/bastion/changelog.log"
 # Where we store etags of public keys for registered users

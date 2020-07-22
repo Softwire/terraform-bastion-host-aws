@@ -104,7 +104,7 @@ chmod 700 /usr/bin/bastion/sync_users_with_s3
 
 # Update users every 5 minutes, check for security updates at 3AM
 cat > ~/crontab << EOF
-*/5 * * * * /usr/bin/bastion/sync_users_with_s3
+*/5 * * * * PATH=$PATH:/sbin /usr/bin/bastion/sync_users_with_s3
 0 3 * * * yum -y update --security
 EOF
 crontab ~/crontab

@@ -2,6 +2,9 @@
 resource "aws_s3_bucket" "ssh_keys" {
   bucket_prefix = "${var.name_prefix}ssh-keys"
   acl           = "private"
+  versioning {
+    enabled = true
+  }
 }
 
 resource "aws_s3_bucket_object" "ssh_keys_readme" {

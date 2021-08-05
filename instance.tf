@@ -21,7 +21,7 @@ resource "aws_security_group" "bastion" {
   name        = "${var.name_prefix}main"
   vpc_id      = var.vpc_id
 
-  tags = merge(map("Name", "${var.name_prefix}main"), var.tags_default, var.tags_sg)
+  tags = merge(tomap("Name", "${var.name_prefix}main"), var.tags_default, var.tags_sg)
 
   # Incoming traffic from the internet. Only allow SSH connections
   ingress {
@@ -62,7 +62,7 @@ resource "aws_security_group" "instances" {
   name        = "${var.name_prefix}instances"
   vpc_id      = var.vpc_id
 
-  tags = merge(map("Name", "${var.name_prefix}instances"), var.tags_default, var.tags_sg)
+  tags = merge(tomap("Name", "${var.name_prefix}instances"), var.tags_default, var.tags_sg)
 
   # Incoming traffic from the internet. Only allow SSH connections
   ingress {
@@ -117,7 +117,7 @@ resource "aws_autoscaling_group" "bastion" {
   ]
 
   dynamic tag {
-    for_each = merge(map("Name", "${var.name_prefix}asg"), var.tags_default, var.tags_asg)
+    for_each = merge(tomap("Name", "${var.name_prefix}asg"), var.tags_default, var.tags_asg)
     content {
       key                 = tag.key
       value               = tag.value

@@ -5,7 +5,7 @@ resource "aws_lb" "bastion" {
   subnets = var.public_subnet_arns
 
   load_balancer_type = "network"
-  tags               = merge(map("Name", "${var.name_prefix}lb"), var.tags_default, var.tags_lb)
+  tags               = merge(tomap("Name", "${var.name_prefix}lb"), var.tags_default, var.tags_lb)
 }
 
 resource "aws_lb_target_group" "bastion_default" {
@@ -20,7 +20,7 @@ resource "aws_lb_target_group" "bastion_default" {
     protocol = "TCP"
   }
 
-  tags = merge(map("Name", "${var.name_prefix}lb"), var.tags_default, var.tags_lb)
+  tags = merge(tomap("Name", "${var.name_prefix}lb"), var.tags_default, var.tags_lb)
 }
 
 resource "aws_lb_listener" "bastion_ssh" {

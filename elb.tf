@@ -1,3 +1,4 @@
+# tfsec:ignore:aws-elb-alb-not-public
 resource "aws_lb" "bastion" {
   name_prefix = "${var.name_prefix}lb-"
   internal    = false

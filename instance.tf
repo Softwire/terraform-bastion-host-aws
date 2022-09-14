@@ -21,10 +21,11 @@ resource "aws_security_group" "bastion" {
   name        = "${var.name_prefix}main"
   vpc_id      = var.vpc_id
 
-  tags = merge({"Name" = "${var.name_prefix}main"}, var.tags_default, var.tags_sg)
+  tags = merge({ "Name" = "${var.name_prefix}main" }, var.tags_default, var.tags_sg)
 
   # Incoming traffic from the internet. Only allow SSH connections
   ingress {
+    description = "Incoming SSH traffic from allowlisted CIDRs"
     from_port   = var.external_ssh_port
     to_port     = var.external_ssh_port
     protocol    = "TCP"
@@ -33,6 +34,7 @@ resource "aws_security_group" "bastion" {
 
   # Outgoing traffic - anything VPC only
   egress {
+    description = "Egress - VPC only"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -40,6 +42,7 @@ resource "aws_security_group" "bastion" {
   }
 
   # Plus allow HTTP(S) internet egress for yum updates
+  # tfsec:ignore:aws-vpc-no-public-egress-sgr
   egress {
     description = "Outbound TLS"
     from_port   = 443
@@ -48,6 +51,7 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # tfsec:ignore:aws-vpc-no-public-egress-sgr
   egress {
     description = "Outbound HTTP"
     from_port   = 80
@@ -73,6 +77,15 @@ resource "aws_launch_configuration" "bastion" {
     region      = var.region
     bucket_name = aws_s3_bucket.ssh_keys.bucket
   })
+
+  root_block_device {
+    encrypted = true
+  }
+
+  metadata_options {
+    http_tokens   = "required"
+    http_endpoint = "enabled"
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -100,8 +113,8 @@ resource "aws_autoscaling_group" "bastion" {
     "OldestLaunchConfiguration",
   ]
 
-  dynamic tag {
-    for_each = merge({"Name" = "${var.name_prefix}asg"}, var.tags_default, var.tags_asg)
+  dynamic "tag" {
+    for_each = merge({ "Name" = "${var.name_prefix}asg" }, var.tags_default, var.tags_asg)
     content {
       key                 = tag.key
       value               = tag.value

@@ -2,19 +2,19 @@ variable "region" {
   description = "AWS region name"
 }
 
-variable "public_subnet_arns" {
-  description = "List of subnet ARNs where NLB listeners will be deployed. This should have public ingress"
+variable "public_subnet_ids" {
+  description = "List of subnet ids where NLB listeners will be deployed. This should have public ingress"
 }
 
-variable "instance_subnet_arns" {
-  description = "List of subnet ARNs where instances will be deployed."
+variable "instance_subnet_ids" {
+  description = "List of subnet ids where instances will be deployed"
 }
 
 variable "vpc_id" {
   description = "ID of the VPC where the bastion will be deployed"
 }
 
-variable "admin_ssh_key_pair" {
+variable "admin_ssh_key_pair_name" {
   description = "Name of the SSH key pair for the admin user account"
 }
 

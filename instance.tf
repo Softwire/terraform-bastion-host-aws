@@ -81,7 +81,7 @@ resource "aws_launch_configuration" "bastion" {
   associate_public_ip_address = false
   enable_monitoring           = true
   iam_instance_profile        = aws_iam_instance_profile.bastion_host_profile.name
-  key_name                    = var.admin_ssh_key_pair
+  key_name                    = var.admin_ssh_key_pair_name
 
   security_groups = [aws_security_group.bastion.id]
 
@@ -102,7 +102,7 @@ resource "aws_autoscaling_group" "bastion" {
   min_size             = local.instance_count
   desired_capacity     = local.instance_count
 
-  vpc_zone_identifier = var.instance_subnet_arns
+  vpc_zone_identifier = var.instance_subnet_ids
 
   default_cooldown          = 180
   health_check_grace_period = 180

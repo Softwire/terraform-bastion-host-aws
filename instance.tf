@@ -57,22 +57,6 @@ resource "aws_security_group" "bastion" {
   }
 }
 
-resource "aws_security_group" "instances" {
-  description = "Apply this group to specific instances to allow SSH ingress from the bastion"
-  name        = "${var.name_prefix}instances"
-  vpc_id      = var.vpc_id
-
-  tags = merge({"Name" = "${var.name_prefix}instances"}, var.tags_default, var.tags_sg)
-
-  # Incoming traffic from the internet. Only allow SSH connections
-  ingress {
-    from_port       = var.internal_ssh_port
-    to_port         = var.internal_ssh_port
-    protocol        = "TCP"
-    security_groups = [aws_security_group.bastion.id]
-  }
-}
-
 resource "aws_launch_configuration" "bastion" {
   name_prefix = "${var.name_prefix}launch-config-"
   image_id    = var.custom_ami != "" ? var.custom_ami : data.aws_ami.aws_linux_2[0].image_id

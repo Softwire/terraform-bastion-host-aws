@@ -19,8 +19,13 @@ variable "admin_ssh_key_pair_name" {
 }
 
 variable "name_prefix" {
-  description = "Prefix to be applied to names of all resources"
-  default     = "bastion-host-"
+  description = "Max 3 character prefix to be applied to names of all resources"
+  default     = "bst"
+
+  validation {
+    condition     = length(var.name_prefix) <= 3
+    error_message = "name_prefix must be at most three characters"
+  }
 }
 
 variable "external_allowed_cidrs" {

@@ -27,6 +27,18 @@ data "aws_iam_policy_document" "bastion_policy" {
     actions   = ["s3:ListBucket"]
     resources = [aws_s3_bucket.ssh_keys.arn]
   }
+
+  # Allow reading the host key secret
+  statement {
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [aws_secretsmanager_secret.bastion_host_key.arn]
+  }
+
+  # Allow use of the KMS key used to encrypt the host key secret
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [aws_kms_key.bastion_host_key_encryption_key.arn]
+  }
 }
 
 resource "aws_iam_policy" "bastion" {
@@ -34,7 +46,7 @@ resource "aws_iam_policy" "bastion" {
   policy      = data.aws_iam_policy_document.bastion_policy.json
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_given_policy" {
+resource "aws_iam_role_policy_attachment" "bastion_policy" {
   role       = aws_iam_role.bastion.name
   policy_arn = aws_iam_policy.bastion.arn
 }

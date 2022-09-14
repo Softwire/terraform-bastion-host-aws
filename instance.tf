@@ -74,8 +74,9 @@ resource "aws_launch_configuration" "bastion" {
   security_groups = [aws_security_group.bastion.id]
 
   user_data = templatefile("${path.module}/init.sh", {
-    region      = var.region
-    bucket_name = aws_s3_bucket.ssh_keys.bucket
+    region             = var.region
+    bucket_name        = aws_s3_bucket.ssh_keys.bucket,
+    host_key_secret_id = aws_secretsmanager_secret_version.bastion_host_key.secret_id,
   })
 
   root_block_device {
@@ -101,7 +102,7 @@ resource "aws_autoscaling_group" "bastion" {
 
   vpc_zone_identifier = var.instance_subnet_ids
 
-  default_cooldown          = 180
+  default_cooldown          = 30
   health_check_grace_period = 180
   health_check_type         = "EC2"
 
@@ -114,7 +115,7 @@ resource "aws_autoscaling_group" "bastion" {
   ]
 
   dynamic "tag" {
-    for_each = merge({ "Name" = "${var.name_prefix}asg" }, var.tags_default, var.tags_asg)
+    for_each = merge({ "Name" = "${var.name_prefix}bastion-instances-asg" }, var.tags_default, var.tags_asg)
     content {
       key                 = tag.key
       value               = tag.value

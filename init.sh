@@ -8,6 +8,24 @@ yum -y install jq
 mkdir /usr/bin/bastion
 mkdir /var/log/bastion
 
+# Block non-root users from accessing the instance metadata service
+iptables -A OUTPUT -m owner ! --uid-owner root -d 169.254.169.254 -j DROP
+
+# Fetch the host key from AWS Secrets Manager
+aws secretsmanager get-secret-value --region ${region} --secret-id ${host_key_secret_id} --query SecretString --output text > /etc/ssh/ssh_host_ed25519_key
+ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key > /etc/ssh/ssh_host_ed25519_key.pub
+chmod 600 /etc/ssh/ssh_host_ed25519_key
+
+sed -i 's|HostKey /etc/ssh/ssh_host_ecdsa_key|#HostKey /etc/ssh/ssh_host_ecdsa_key|' /etc/ssh/sshd_config
+sed -i 's|HostKey /etc/ssh/ssh_host_rsa_key|#HostKey /etc/ssh/ssh_host_rsa_key|' /etc/ssh/sshd_config
+rm -f /etc/ssh/ssh_host_rsa_key /etc/ssh/ssh_host_rsa_key.pub
+rm -f /etc/ssh/ssh_host_ecdsa_key /etc/ssh/ssh_host_ecdsa_key.pub
+
+
+# Check the SSH config is valid, otherwise sshd will not come back up
+/usr/sbin/sshd -t
+systemctl restart sshd
+
 cat > /usr/bin/bastion/sync_users_with_s3 <<'EOF'
 #!/usr/bin/env bash
 

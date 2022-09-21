@@ -60,8 +60,8 @@ resource "aws_security_group" "bastion" {
 resource "aws_launch_configuration" "bastion" {
   name_prefix = "${var.name_prefix}launch-config-"
   image_id    = var.custom_ami != "" ? var.custom_ami : data.aws_ami.aws_linux_2[0].image_id
-  # A t2.nano should be perfectly sufficient for a simple bastion host
-  instance_type               = "t2.nano"
+  # A t3.nano should be perfectly sufficient for a simple bastion host
+  instance_type               = "t3.nano"
   associate_public_ip_address = false
   enable_monitoring           = true
   iam_instance_profile        = aws_iam_instance_profile.bastion_host_profile.name

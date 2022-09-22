@@ -3,10 +3,7 @@
 # tfsec:ignore:aws-s3-encryption-customer-key tfsec:ignore:aws-s3-enable-bucket-encryption
 resource "aws_s3_bucket" "ssh_keys" {
   bucket_prefix = "${var.name_prefix}ssh-keys"
-
-  lifecycle {
-    prevent_destroy = true
-  }
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_acl" "ssh_keys_acl" {
@@ -39,7 +36,8 @@ resource "aws_s3_object" "ssh_keys_readme" {
 # Another bucket for access logs for the keys bucket
 # tfsec:ignore:aws-s3-enable-bucket-logging tfsec:ignore:aws-s3-enable-versioning tfsec:ignore:aws-s3-encryption-customer-key tfsec:ignore:aws-s3-enable-bucket-encryption
 resource "aws_s3_bucket" "ssh_keys_logs" {
-  bucket = "${var.name_prefix}ssh-keys-access-logs"
+  bucket_prefix = "${var.name_prefix}ssh-keys-logs"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "ssh_keys_logs" {

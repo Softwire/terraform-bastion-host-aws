@@ -1,5 +1,8 @@
 # AWS Bastion Host module for Terraform
 
+> This module creates a bastion which manages access by uploading SSH public keys to an S3 bucket.  
+> AWS now has tools to manage instance access using AWS credentials instead, either EC2 Instance Connect or AWS Systems Manager Session Manager - consider those alternatives to this module.
+
 ## Features
 
 * Optional custom AMI

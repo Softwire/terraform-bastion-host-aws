@@ -1,5 +1,6 @@
-output "instances_security_group_id" {
-  value = aws_security_group.instances.id
+output "bastion_security_group_id" {
+  description = "Security group of the bastion instances"
+  value = aws_security_group.bastion.id
 }
 
 output "bastion_dns_name" {

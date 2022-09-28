@@ -2,25 +2,30 @@ variable "region" {
   description = "AWS region name"
 }
 
-variable "public_subnet_arns" {
-  description = "List of subnet ARNs where NLB listeners will be deployed. This should have public ingress"
+variable "public_subnet_ids" {
+  description = "List of subnet ids where NLB listeners will be deployed. This should have public ingress"
 }
 
-variable "instance_subnet_arns" {
-  description = "List of subnet ARNs where instances will be deployed."
+variable "instance_subnet_ids" {
+  description = "List of subnet ids where instances will be deployed"
 }
 
 variable "vpc_id" {
   description = "ID of the VPC where the bastion will be deployed"
 }
 
-variable "admin_ssh_key_pair" {
+variable "admin_ssh_key_pair_name" {
   description = "Name of the SSH key pair for the admin user account"
 }
 
 variable "name_prefix" {
-  description = "Prefix to be applied to names of all resources"
-  default     = "bastion-host-"
+  description = "Max 3 character prefix to be applied to names of all resources"
+  default     = "bst"
+
+  validation {
+    condition     = length(var.name_prefix) <= 3
+    error_message = "name_prefix must be at most three characters"
+  }
 }
 
 variable "external_allowed_cidrs" {

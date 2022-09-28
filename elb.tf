@@ -2,7 +2,7 @@ resource "aws_lb" "bastion" {
   name_prefix = "${var.name_prefix}lb-"
   internal    = false
 
-  subnets = var.public_subnet_arns
+  subnets = var.public_subnet_ids
 
   load_balancer_type = "network"
   tags               = merge({"Name" = "${var.name_prefix}lb"}, var.tags_default, var.tags_lb)

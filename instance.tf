@@ -57,31 +57,15 @@ resource "aws_security_group" "bastion" {
   }
 }
 
-resource "aws_security_group" "instances" {
-  description = "Apply this group to specific instances to allow SSH ingress from the bastion"
-  name        = "${var.name_prefix}instances"
-  vpc_id      = var.vpc_id
-
-  tags = merge({"Name" = "${var.name_prefix}instances"}, var.tags_default, var.tags_sg)
-
-  # Incoming traffic from the internet. Only allow SSH connections
-  ingress {
-    from_port       = var.internal_ssh_port
-    to_port         = var.internal_ssh_port
-    protocol        = "TCP"
-    security_groups = [aws_security_group.bastion.id]
-  }
-}
-
 resource "aws_launch_configuration" "bastion" {
   name_prefix = "${var.name_prefix}launch-config-"
   image_id    = var.custom_ami != "" ? var.custom_ami : data.aws_ami.aws_linux_2[0].image_id
-  # A t2.nano should be perfectly sufficient for a simple bastion host
-  instance_type               = "t2.nano"
+  # A t3.nano should be perfectly sufficient for a simple bastion host
+  instance_type               = "t3.nano"
   associate_public_ip_address = false
   enable_monitoring           = true
   iam_instance_profile        = aws_iam_instance_profile.bastion_host_profile.name
-  key_name                    = var.admin_ssh_key_pair
+  key_name                    = var.admin_ssh_key_pair_name
 
   security_groups = [aws_security_group.bastion.id]
 
@@ -102,7 +86,7 @@ resource "aws_autoscaling_group" "bastion" {
   min_size             = local.instance_count
   desired_capacity     = local.instance_count
 
-  vpc_zone_identifier = var.instance_subnet_arns
+  vpc_zone_identifier = var.instance_subnet_ids
 
   default_cooldown          = 180
   health_check_grace_period = 180

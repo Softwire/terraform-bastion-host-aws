@@ -1,8 +1,8 @@
 resource "aws_route53_record" "dns_record" {
-  count = var.dns_config != null ? count(local.dns_record_types) : 0
+  count = var.dns_config != null ? length(local.dns_record_types) : 0
 
-  name    = var.dns_config.record_name
-  zone_id = var.dns_config.hosted_zone_name
+  name    = var.dns_config.domain
+  zone_id = var.dns_config.zone_id
   type    = local.dns_record_types[count.index]
 
   alias {

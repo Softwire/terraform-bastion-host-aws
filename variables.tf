@@ -58,7 +58,7 @@ variable "custom_ami" {
 }
 
 variable "dns_config" {
-  type        = object({ record_name = string, hosted_zone_name = string })
+  type        = object({ domain = string, zone_id = string })
   description = "DNS record name and the route53 hosted zone where the record will be registered"
   default     = null
 }

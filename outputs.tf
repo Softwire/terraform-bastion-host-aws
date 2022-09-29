@@ -4,7 +4,7 @@ output "bastion_security_group_id" {
 }
 
 output "bastion_dns_name" {
-  value = aws_lb.bastion.dns_name
+  value = var.dns_config != null ? aws_route53_record.dns_record[0].name : aws_lb.bastion.dns_name
 }
 
 output "ssh_keys_bucket" {

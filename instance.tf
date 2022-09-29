@@ -122,6 +122,10 @@ resource "aws_autoscaling_group" "bastion" {
     }
   }
 
+  instance_refresh {
+    strategy = "Rolling"
+  }
+
   lifecycle {
     create_before_destroy = true
   }

@@ -48,8 +48,8 @@ for row in $(cat "$S3_DATA_FILE" | jq -r '.[] | @base64'); do
   USER_NAME=$(parse_username "$KEY")
   ETAG=$(_jq '.ETag')
 
-  # Check the username starts with a letter and only contains letters, numbers and dashes afterwards
-  if [[ "$USER_NAME" =~ ^[a-z][-a-z0-9]*$ ]]; then
+  # Check the username starts with a letter and only contains letters, numbers, dashes and underscores afterwards
+  if [[ "$USER_NAME" =~ ^[a-z][-a-z0-9_]*$ ]]; then
     # Check whether the user already exists
     cut -d: -f1 /etc/passwd | grep -qx $USER_NAME  || error_code=$?
     if [ $error_code -eq 1 ]; then

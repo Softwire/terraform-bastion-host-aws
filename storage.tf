@@ -30,7 +30,7 @@ resource "aws_s3_bucket_public_access_block" "ssh_keys" {
 resource "aws_s3_object" "ssh_keys_readme" {
   bucket  = aws_s3_bucket.ssh_keys.id
   key     = "README.txt"
-  content = "Drop public SSH keys of users who require access to the bastion. The filename (without the .pub) will be their username."
+  content = "Drop public SSH keys of users who require access to the bastion. The filename (without the .pub and made all lowercase) will be their username."
 }
 
 # Another bucket for access logs for the keys bucket

@@ -10,7 +10,7 @@
 
 ## User management
 
-* To create a new user, upload their SSH public key to the S3 bucket referenced in the script output.
+* To create a new user, upload their SSH public key to the S3 bucket referenced in the script output. See the README stored there for details.
 * To delete a user, remove their key from the S3 bucket.
 
 Any changes to the S3 bucket will be synchronised within 5 minutes

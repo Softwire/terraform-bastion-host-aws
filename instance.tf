@@ -18,47 +18,60 @@ data "aws_ami" "aws_linux_2" {
 
 resource "aws_security_group" "bastion" {
   description = "Enable SSH access to the bastion host from external via SSH port"
-  name        = "${var.name_prefix}main"
+  name        = "${var.name_prefix}bastion-sg"
   vpc_id      = var.vpc_id
 
-  tags = merge({ "Name" = "${var.name_prefix}main" }, var.tags_default, var.tags_sg)
+  tags = merge({ "Name" = "${var.name_prefix}bastion-sg" }, var.tags_default, var.tags_sg)
 
-  # Incoming traffic from the internet. Only allow SSH connections
-  ingress {
-    description = "Incoming SSH traffic from allowlisted CIDRs"
-    from_port   = var.external_ssh_port
-    to_port     = var.external_ssh_port
-    protocol    = "TCP"
-    cidr_blocks = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
+  lifecycle {
+    create_before_destroy = true
   }
+}
 
-  # Outgoing traffic - anything VPC only
-  egress {
-    description = "Egress - VPC only"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [data.aws_vpc.bastion.cidr_block]
-  }
+# Incoming traffic from the internet. Only allow SSH connections
+resource "aws_security_group_rule" "ssh_ingress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "ingress"
+  description       = "Incoming SSH traffic from allowlisted CIDRs"
+  from_port         = var.external_ssh_port
+  to_port           = var.external_ssh_port
+  protocol          = "TCP"
+  cidr_blocks       = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
+}
 
-  # Plus allow HTTP(S) internet egress for yum updates
-  # tfsec:ignore:aws-vpc-no-public-egress-sgr
-  egress {
-    description = "Outbound TLS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# Outgoing traffic - anything VPC only
+resource "aws_security_group_rule" "vpc_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Egress - VPC only"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = [data.aws_vpc.bastion.cidr_block]
+}
 
-  # tfsec:ignore:aws-vpc-no-public-egress-sgr
-  egress {
-    description = "Outbound HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+
+# Plus allow HTTP(S) internet egress for yum updates
+# tfsec:ignore:aws-vpc-no-public-egress-sgr
+resource "aws_security_group_rule" "https_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Outbound TLS"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# tfsec:ignore:aws-vpc-no-public-egress-sgr
+resource "aws_security_group_rule" "http_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Outbound HTTP"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_launch_configuration" "bastion" {

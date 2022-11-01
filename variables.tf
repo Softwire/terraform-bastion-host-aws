@@ -86,3 +86,9 @@ variable "tags_sg" {
   description = "Tags to apply to the bastion security groups"
   default     = {}
 }
+
+variable "extra_userdata" {
+  type        = string
+  default     = ""
+  description = "Extra commands to append to the instance user data script"
+}

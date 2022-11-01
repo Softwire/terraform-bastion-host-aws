@@ -86,11 +86,14 @@ resource "aws_launch_configuration" "bastion" {
 
   security_groups = [aws_security_group.bastion.id]
 
-  user_data = templatefile("${path.module}/init.sh", {
-    region             = var.region
-    bucket_name        = aws_s3_bucket.ssh_keys.bucket,
-    host_key_secret_id = aws_secretsmanager_secret_version.bastion_host_key.secret_id,
-  })
+  user_data = join("\n", [
+    templatefile("${path.module}/init.sh", {
+      region             = var.region
+      bucket_name        = aws_s3_bucket.ssh_keys.bucket,
+      host_key_secret_id = aws_secretsmanager_secret_version.bastion_host_key.secret_id,
+    }),
+    var.extra_userdata
+  ])
 
   root_block_device {
     encrypted = true

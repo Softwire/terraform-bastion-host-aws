@@ -35,6 +35,7 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 | tags_lb | Tags to apply to the bastion load balancer | map | no | `{}` |
 | tags_asg | Tags to apply to the bastion autoscaling group | map | no | `{}` |
 | tags_sg | Tags to apply to the bastion security groups | map | no | `{}` |
+| extra_userdata | Extra commands to append to the instance user data script | string | no | |
 
 ### DNS Config
 

@@ -36,6 +36,7 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 | tags_asg | Tags to apply to the bastion autoscaling group | map | no | `{}` |
 | tags_sg | Tags to apply to the bastion security groups | map | no | `{}` |
 | extra_userdata | Extra commands to append to the instance user data script | string | no | |
+| log_group_name | The name of a CloudWatch log group to send logs of SSH logins and user/key changes to | string | no | |
 
 ### DNS Config
 

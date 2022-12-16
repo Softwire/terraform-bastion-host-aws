@@ -92,3 +92,10 @@ variable "extra_userdata" {
   default     = ""
   description = "Extra commands to append to the instance user data script"
 }
+
+
+variable "log_group_name" {
+  type        = string
+  default     = null
+  description = "Optional log group to send SSH logs to"
+}

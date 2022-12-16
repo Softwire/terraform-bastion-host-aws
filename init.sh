@@ -3,13 +3,18 @@
 set -xe
 
 yum -y update --security
-yum -y install jq
+yum -y install jq nc amazon-cloudwatch-agent iptables-services
 
 mkdir /usr/bin/bastion
 mkdir /var/log/bastion
 
+systemctl enable iptables
+systemctl start iptables
 # Block non-root users from accessing the instance metadata service
 iptables -A OUTPUT -m owner ! --uid-owner root -d 169.254.169.254 -j DROP
+# Allow port 2345 for health checks
+iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 2345 -j ACCEPT
+service iptables save
 
 # Fetch the host key from AWS Secrets Manager
 aws secretsmanager get-secret-value --region ${region} --secret-id ${host_key_secret_id} --query SecretString --output text > /etc/ssh/ssh_host_ed25519_key
@@ -25,6 +30,10 @@ rm -f /etc/ssh/ssh_host_ecdsa_key /etc/ssh/ssh_host_ecdsa_key.pub
 # Check the SSH config is valid, otherwise sshd will not come back up
 /usr/sbin/sshd -t
 systemctl restart sshd
+
+if [ ! -z "${cloudwatch_config_ssm_parameter}" ]; then
+  amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c "ssm:${cloudwatch_config_ssm_parameter}"
+fi
 
 cat > /usr/bin/bastion/sync_users_with_s3 <<'EOF'
 #!/usr/bin/env bash
@@ -119,11 +128,16 @@ fi
 EOF
 
 chmod 700 /usr/bin/bastion/sync_users_with_s3
+PATH=$PATH:/sbin /usr/bin/bastion/sync_users_with_s3
 
 # Update users every 5 minutes, check for security updates at 3AM
 cat > ~/crontab << EOF
 */5 * * * * PATH=$PATH:/sbin /usr/bin/bastion/sync_users_with_s3
 0 3 * * * yum -y update --security
+@reboot bash -c "cat /dev/null | nohup nc -kl 2345 >/dev/null 2>&1 &"
 EOF
 crontab ~/crontab
 rm ~/crontab
+
+# Listen on port 2345 for healthcheck pings from the load balancer
+bash -c "cat /dev/null | nohup nc -kl 2345 >/dev/null 2>&1 &"

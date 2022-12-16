@@ -9,7 +9,7 @@ data "aws_vpc" "bastion" {
   id = var.vpc_id
 }
 
-data "aws_subnet" "subnets" {
+data "aws_subnet" "public_subnets" {
   count = length(var.public_subnet_ids)
   id    = var.public_subnet_ids[count.index]
 }

@@ -36,7 +36,18 @@ resource "aws_security_group_rule" "ssh_ingress" {
   from_port         = var.external_ssh_port
   to_port           = var.external_ssh_port
   protocol          = "TCP"
-  cidr_blocks       = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
+  cidr_blocks       = concat(data.aws_subnet.public_subnets.*.cidr_block, var.external_allowed_cidrs)
+}
+
+# Health checks
+resource "aws_security_group_rule" "health_check" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "ingress"
+  description       = "Health check"
+  from_port         = 2345
+  to_port           = 2345
+  protocol          = "TCP"
+  cidr_blocks       = data.aws_subnet.public_subnets.*.cidr_block
 }
 
 # Outgoing traffic - anything VPC only
@@ -88,9 +99,10 @@ resource "aws_launch_configuration" "bastion" {
 
   user_data = join("\n", [
     templatefile("${path.module}/init.sh", {
-      region             = var.region
-      bucket_name        = aws_s3_bucket.ssh_keys.bucket,
-      host_key_secret_id = aws_secretsmanager_secret_version.bastion_host_key.secret_id,
+      region                          = var.region
+      bucket_name                     = aws_s3_bucket.ssh_keys.bucket
+      host_key_secret_id              = aws_secretsmanager_secret_version.bastion_host_key.secret_id
+      cloudwatch_config_ssm_parameter = var.log_group_name == null ? "" : aws_ssm_parameter.cloudwatch_agent_config[0].name
     }),
     var.extra_userdata
   ])
@@ -112,7 +124,7 @@ resource "aws_launch_configuration" "bastion" {
 resource "aws_autoscaling_group" "bastion" {
   name_prefix          = "${var.name_prefix}asg-"
   launch_configuration = aws_launch_configuration.bastion.name
-  max_size             = local.instance_count
+  max_size             = local.instance_count + 1
   min_size             = local.instance_count
   desired_capacity     = local.instance_count
 

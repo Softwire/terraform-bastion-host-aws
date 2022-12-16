@@ -10,14 +10,14 @@ resource "aws_lb" "bastion" {
 }
 
 resource "aws_lb_target_group" "bastion_default" {
-  vpc_id = var.vpc_id
-
-  port        = var.external_ssh_port
-  protocol    = "TCP"
-  target_type = "instance"
+  vpc_id             = var.vpc_id
+  port               = var.external_ssh_port
+  protocol           = "TCP"
+  target_type        = "instance"
+  preserve_client_ip = true
 
   health_check {
-    port     = "traffic-port"
+    port     = 2345
     protocol = "TCP"
   }
 

@@ -87,6 +87,12 @@ variable "tags_sg" {
   default     = {}
 }
 
+variable "tags_host_key" {
+  type        = map(string)
+  description = "Tags to apply to the bastion host key secret and KMS key"
+  default     = {}
+}
+
 variable "extra_userdata" {
   type        = string
   default     = ""

@@ -91,3 +91,21 @@ resource "aws_s3_bucket_logging" "ssh_keys" {
   target_bucket = aws_s3_bucket.ssh_keys_logs.id
   target_prefix = "${var.name_prefix}logs/"
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "ssh_keys_logs" {
+  count = var.s3_access_log_expiration_days == null ? 0 : 1
+
+  bucket = aws_s3_bucket.ssh_keys_logs.id
+
+  rule {
+    id = "expire-old-logs"
+
+    filter {}
+
+    expiration {
+      days = var.s3_access_log_expiration_days
+    }
+
+    status = "Enabled"
+  }
+}

@@ -99,9 +99,13 @@ variable "extra_userdata" {
   description = "Extra commands to append to the instance user data script"
 }
 
-
 variable "log_group_name" {
   type        = string
   default     = null
   description = "Optional log group to send SSH logs to"
+}
+
+variable "s3_access_log_expiration_days" {
+  type    = number
+  default = null
 }

@@ -1,6 +1,4 @@
 # This is where the SSH keys of users will be stored
-# Public keys do not need to be encrypted
-# tfsec:ignore:aws-s3-encryption-customer-key tfsec:ignore:aws-s3-enable-bucket-encryption
 resource "aws_s3_bucket" "ssh_keys" {
   bucket_prefix = "${var.name_prefix}ssh-keys"
   force_destroy = true
@@ -27,6 +25,17 @@ resource "aws_s3_bucket_public_access_block" "ssh_keys" {
   restrict_public_buckets = true
 }
 
+# tfsec:ignore:aws-s3-encryption-customer-key
+resource "aws_s3_bucket_server_side_encryption_configuration" "ssh_keys" {
+  bucket = aws_s3_bucket.ssh_keys.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_s3_object" "ssh_keys_readme" {
   bucket  = aws_s3_bucket.ssh_keys.id
   key     = "README.txt"
@@ -47,6 +56,17 @@ resource "aws_s3_bucket_public_access_block" "ssh_keys_logs" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+# tfsec:ignore:aws-s3-encryption-customer-key
+resource "aws_s3_bucket_server_side_encryption_configuration" "ssh_keys_logs" {
+  bucket = aws_s3_bucket.ssh_keys_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "allow_log_writes" {

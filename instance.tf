@@ -18,47 +18,71 @@ data "aws_ami" "aws_linux_2" {
 
 resource "aws_security_group" "bastion" {
   description = "Enable SSH access to the bastion host from external via SSH port"
-  name        = "${var.name_prefix}main"
+  name        = "${var.name_prefix}bastion-sg"
   vpc_id      = var.vpc_id
 
-  tags = merge({ "Name" = "${var.name_prefix}main" }, var.tags_default, var.tags_sg)
+  tags = merge({ "Name" = "${var.name_prefix}bastion-sg" }, var.tags_default, var.tags_sg)
 
-  # Incoming traffic from the internet. Only allow SSH connections
-  ingress {
-    description = "Incoming SSH traffic from allowlisted CIDRs"
-    from_port   = var.external_ssh_port
-    to_port     = var.external_ssh_port
-    protocol    = "TCP"
-    cidr_blocks = concat(data.aws_subnet.subnets.*.cidr_block, var.external_allowed_cidrs)
+  lifecycle {
+    create_before_destroy = true
   }
+}
 
-  # Outgoing traffic - anything VPC only
-  egress {
-    description = "Egress - VPC only"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [data.aws_vpc.bastion.cidr_block]
-  }
+# Incoming traffic from the internet. Only allow SSH connections
+resource "aws_security_group_rule" "ssh_ingress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "ingress"
+  description       = "Incoming SSH traffic from allowlisted CIDRs"
+  from_port         = var.external_ssh_port
+  to_port           = var.external_ssh_port
+  protocol          = "TCP"
+  cidr_blocks       = concat(data.aws_subnet.public_subnets.*.cidr_block, var.external_allowed_cidrs)
+}
 
-  # Plus allow HTTP(S) internet egress for yum updates
-  # tfsec:ignore:aws-vpc-no-public-egress-sgr
-  egress {
-    description = "Outbound TLS"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# Health checks
+resource "aws_security_group_rule" "health_check" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "ingress"
+  description       = "Health check"
+  from_port         = 2345
+  to_port           = 2345
+  protocol          = "TCP"
+  cidr_blocks       = data.aws_subnet.public_subnets.*.cidr_block
+}
 
-  # tfsec:ignore:aws-vpc-no-public-egress-sgr
-  egress {
-    description = "Outbound HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# Outgoing traffic - anything VPC only
+resource "aws_security_group_rule" "vpc_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Egress - VPC only"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = [data.aws_vpc.bastion.cidr_block]
+}
+
+
+# Plus allow HTTP(S) internet egress for yum updates
+# tfsec:ignore:aws-vpc-no-public-egress-sgr
+resource "aws_security_group_rule" "https_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Outbound TLS"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# tfsec:ignore:aws-vpc-no-public-egress-sgr
+resource "aws_security_group_rule" "http_egress" {
+  security_group_id = aws_security_group.bastion.id
+  type              = "egress"
+  description       = "Outbound HTTP"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_launch_configuration" "bastion" {
@@ -73,10 +97,15 @@ resource "aws_launch_configuration" "bastion" {
 
   security_groups = [aws_security_group.bastion.id]
 
-  user_data = templatefile("${path.module}/init.sh", {
-    region      = var.region
-    bucket_name = aws_s3_bucket.ssh_keys.bucket
-  })
+  user_data = join("\n", [
+    templatefile("${path.module}/init.sh", {
+      region                          = var.region
+      bucket_name                     = aws_s3_bucket.ssh_keys.bucket
+      host_key_secret_id              = aws_secretsmanager_secret_version.bastion_host_key.secret_id
+      cloudwatch_config_ssm_parameter = var.log_group_name == null ? "" : aws_ssm_parameter.cloudwatch_agent_config[0].name
+    }),
+    var.extra_userdata
+  ])
 
   root_block_device {
     encrypted = true
@@ -95,13 +124,13 @@ resource "aws_launch_configuration" "bastion" {
 resource "aws_autoscaling_group" "bastion" {
   name_prefix          = "${var.name_prefix}asg-"
   launch_configuration = aws_launch_configuration.bastion.name
-  max_size             = local.instance_count
+  max_size             = local.instance_count + 1
   min_size             = local.instance_count
   desired_capacity     = local.instance_count
 
   vpc_zone_identifier = var.instance_subnet_ids
 
-  default_cooldown          = 180
+  default_cooldown          = 30
   health_check_grace_period = 180
   health_check_type         = "EC2"
 
@@ -114,12 +143,16 @@ resource "aws_autoscaling_group" "bastion" {
   ]
 
   dynamic "tag" {
-    for_each = merge({ "Name" = "${var.name_prefix}asg" }, var.tags_default, var.tags_asg)
+    for_each = merge({ "Name" = "${var.name_prefix}bastion-instances-asg" }, var.tags_default, var.tags_asg)
     content {
       key                 = tag.key
       value               = tag.value
       propagate_at_launch = true
     }
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
   }
 
   lifecycle {

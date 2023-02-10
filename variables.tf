@@ -58,7 +58,7 @@ variable "custom_ami" {
 }
 
 variable "dns_config" {
-  type        = object({ record_name = string, hosted_zone_name = string })
+  type        = object({ domain = string, zone_id = string })
   description = "DNS record name and the route53 hosted zone where the record will be registered"
   default     = null
 }
@@ -85,4 +85,27 @@ variable "tags_sg" {
   type        = map(string)
   description = "Tags to apply to the bastion security groups"
   default     = {}
+}
+
+variable "tags_host_key" {
+  type        = map(string)
+  description = "Tags to apply to the bastion host key secret and KMS key"
+  default     = {}
+}
+
+variable "extra_userdata" {
+  type        = string
+  default     = ""
+  description = "Extra commands to append to the instance user data script"
+}
+
+variable "log_group_name" {
+  type        = string
+  default     = null
+  description = "Optional log group to send SSH logs to"
+}
+
+variable "s3_access_log_expiration_days" {
+  type    = number
+  default = null
 }

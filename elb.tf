@@ -6,22 +6,22 @@ resource "aws_lb" "bastion" {
   subnets = var.public_subnet_ids
 
   load_balancer_type = "network"
-  tags               = merge({"Name" = "${var.name_prefix}lb"}, var.tags_default, var.tags_lb)
+  tags               = merge({ "Name" = "${var.name_prefix}lb" }, var.tags_default, var.tags_lb)
 }
 
 resource "aws_lb_target_group" "bastion_default" {
-  vpc_id = var.vpc_id
-
-  port        = var.external_ssh_port
-  protocol    = "TCP"
-  target_type = "instance"
+  vpc_id             = var.vpc_id
+  port               = var.external_ssh_port
+  protocol           = "TCP"
+  target_type        = "instance"
+  preserve_client_ip = true
 
   health_check {
-    port     = "traffic-port"
+    port     = 2345
     protocol = "TCP"
   }
 
-  tags = merge({"Name" = "${var.name_prefix}lb"}, var.tags_default, var.tags_lb)
+  tags = merge({ "Name" = "${var.name_prefix}lb" }, var.tags_default, var.tags_lb)
 }
 
 resource "aws_lb_listener" "bastion_ssh" {

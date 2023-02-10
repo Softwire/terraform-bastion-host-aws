@@ -1,6 +1,4 @@
 # This is where the SSH keys of users will be stored
-# Public keys do not need to be encrypted
-# tfsec:ignore:aws-s3-encryption-customer-key tfsec:ignore:aws-s3-enable-bucket-encryption
 resource "aws_s3_bucket" "ssh_keys" {
   bucket_prefix = "${var.name_prefix}ssh-keys"
   force_destroy = true
@@ -27,6 +25,17 @@ resource "aws_s3_bucket_public_access_block" "ssh_keys" {
   restrict_public_buckets = true
 }
 
+# tfsec:ignore:aws-s3-encryption-customer-key
+resource "aws_s3_bucket_server_side_encryption_configuration" "ssh_keys" {
+  bucket = aws_s3_bucket.ssh_keys.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_s3_object" "ssh_keys_readme" {
   bucket  = aws_s3_bucket.ssh_keys.id
   key     = "README.txt"
@@ -34,7 +43,7 @@ resource "aws_s3_object" "ssh_keys_readme" {
 }
 
 # Another bucket for access logs for the keys bucket
-# tfsec:ignore:aws-s3-enable-bucket-logging tfsec:ignore:aws-s3-enable-versioning tfsec:ignore:aws-s3-encryption-customer-key tfsec:ignore:aws-s3-enable-bucket-encryption
+# tfsec:ignore:aws-s3-enable-bucket-logging tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "ssh_keys_logs" {
   bucket_prefix = "${var.name_prefix}ssh-keys-logs"
   force_destroy = true
@@ -47,6 +56,17 @@ resource "aws_s3_bucket_public_access_block" "ssh_keys_logs" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+# tfsec:ignore:aws-s3-encryption-customer-key
+resource "aws_s3_bucket_server_side_encryption_configuration" "ssh_keys_logs" {
+  bucket = aws_s3_bucket.ssh_keys_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "allow_log_writes" {
@@ -90,4 +110,22 @@ resource "aws_s3_bucket_logging" "ssh_keys" {
 
   target_bucket = aws_s3_bucket.ssh_keys_logs.id
   target_prefix = "${var.name_prefix}logs/"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "ssh_keys_logs" {
+  count = var.s3_access_log_expiration_days == null ? 0 : 1
+
+  bucket = aws_s3_bucket.ssh_keys_logs.id
+
+  rule {
+    id = "expire-old-logs"
+
+    filter {}
+
+    expiration {
+      days = var.s3_access_log_expiration_days
+    }
+
+    status = "Enabled"
+  }
 }

@@ -5,9 +5,6 @@ resource "aws_ssm_parameter" "cloudwatch_agent_config" {
   name = "AmazonCloudWatch-${var.name_prefix}-bastion"
   type = "String"
   value = jsonencode({
-    agent = {
-      metrics_collection_interval = 5
-    },
     logs = {
       logs_collected = {
         files = {

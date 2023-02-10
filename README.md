@@ -27,7 +27,7 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 | instance_subnet_ids | List of subnet ARNs where instances will be deployed. | list | yes | |
 | vpc_id | ID of the VPC where the bastion will be deployed | string | yes | |
 | admin_ssh_key_pair_name | Name of the SSH key pair for the admin user account | string | yes | |
-| name_prefix | Prefix to be applied to names of all resources | string | no | `bastion-host-` |
+| name_prefix | Prefix to be applied to names of all resources, max 3 characters | string | no | `bst` |
 | external_allowed_cidrs | List of CIDRs which can access the bastion | list | no | `["0.0.0.0/0"]` |
 | external_ssh_port | Which port to use to SSH into the bastion | number | no | `22` |
 | internal_ssh_port | Which port the bastion will use to SSH into other private instances | number | no | `22` |
@@ -41,7 +41,7 @@ Any changes to the S3 bucket will be synchronised within 5 minutes
 | tags_host_key | Tags to apply to the bastion host key secret and KMS key | map | no | `{}` |
 | extra_userdata | Extra commands to append to the instance user data script | string | no | |
 | log_group_name | The name of a CloudWatch log group to send logs of SSH logins and user/key changes to | string | no | |
-| s3_access_log_expiration_days | Days to keep S3 access logs, defaults to forever | number | no | |
+| s3_access_log_expiration_days | Days to keep S3 access logs for the keys bucket, defaults to forever | number | no | |
 
 ### DNS Config
 

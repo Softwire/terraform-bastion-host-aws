@@ -85,19 +85,24 @@ resource "aws_security_group_rule" "http_egress" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-resource "aws_launch_configuration" "bastion" {
-  name_prefix = "${var.name_prefix}launch-config-"
+resource "aws_launch_template" "bastion" {
+  name_prefix = "${var.name_prefix}launch-template-"
   image_id    = var.custom_ami != "" ? var.custom_ami : data.aws_ami.aws_linux_2[0].image_id
   # A t3.nano should be perfectly sufficient for a simple bastion host
-  instance_type               = "t3.nano"
-  associate_public_ip_address = false
-  enable_monitoring           = true
-  iam_instance_profile        = aws_iam_instance_profile.bastion_host_profile.name
-  key_name                    = var.admin_ssh_key_pair_name
+  instance_type = "t3.nano"
+  network_interfaces {
+    associate_public_ip_address = false
+    security_groups = [aws_security_group.bastion.id]
+  }
+  monitoring {
+    enabled = true
+  }
+  iam_instance_profile {
+    name = aws_iam_instance_profile.bastion_host_profile.name
+  }
+  key_name = var.admin_ssh_key_pair_name
 
-  security_groups = [aws_security_group.bastion.id]
-
-  user_data = join("\n", [
+  user_data = base64encode(join("\n", [
     templatefile("${path.module}/init.sh", {
       region                          = var.region
       bucket_name                     = aws_s3_bucket.ssh_keys.bucket
@@ -105,11 +110,7 @@ resource "aws_launch_configuration" "bastion" {
       cloudwatch_config_ssm_parameter = var.log_group_name == null ? "" : aws_ssm_parameter.cloudwatch_agent_config[0].name
     }),
     var.extra_userdata
-  ])
-
-  root_block_device {
-    encrypted = true
-  }
+  ]))
 
   metadata_options {
     http_tokens   = "required"
@@ -122,11 +123,14 @@ resource "aws_launch_configuration" "bastion" {
 }
 
 resource "aws_autoscaling_group" "bastion" {
-  name_prefix          = "${var.name_prefix}asg-"
-  launch_configuration = aws_launch_configuration.bastion.name
-  max_size             = local.instance_count + 1
-  min_size             = local.instance_count
-  desired_capacity     = local.instance_count
+  name_prefix = "${var.name_prefix}asg-"
+  launch_template {
+    id      = aws_launch_template.bastion.id
+    version = aws_launch_template.bastion.latest_version
+  }
+  max_size         = local.instance_count + 1
+  min_size         = local.instance_count
+  desired_capacity = local.instance_count
 
   vpc_zone_identifier = var.instance_subnet_ids
 
